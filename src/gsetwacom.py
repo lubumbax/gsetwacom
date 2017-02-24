@@ -102,9 +102,6 @@ def get_arguments():
 
 class GSetWacom():
 
-	MAIN_TAB_NOTABLET = 0
-	MAIN_TAB_TABLET = 1
-
 	def __init__(self, logger, args = None):
 		self._logger = logger
 		
@@ -149,81 +146,48 @@ class GSetWacom():
 		self._logger.info("Terminating the application...")
 		Gtk.main_quit()
 
-	# Retrieves a window from the Gtk builder and connect signals if signals_map is passed
-	def get_window_from_file(self, file, name, signals_map = None):
-		# TODO: check if the file has been added before
-		self._builder.add_from_file(file)
-		if not signals_map == None:
-			self._builder.connect_signals(signals_map)
-		return self._builder.get_object(name)	
-
 	def get_logger(self):
 		return self._logger
 
-	def on_device_changes(self, running_devices, new_devices, deleted_devices):
-		main_nb = self._builder.get_object("main_notebook")
-		c_page  = main_nb.get_current_page()
-		
-		n_running = len(running_devices)
-		n_new     = len(new_devices)
-		n_deleted = len(deleted_devices)
-
-		if n_deleted == 0 and n_new == 0:
-			self._logger.debug("No changes")
-			
-		elif n_new > 0 and c_page == self.MAIN_TAB_NOTABLET:
-			self._logger.info("%d new device(s) detected." % (n_new))
-			main_nb.set_current_page(self.MAIN_TAB_TABLET)
-
-		elif n_deleted > 0 and n_running == 0 and n_new == 0 and c_page == self.MAIN_TAB_TABLET:
-			self._logger.info("All devices (%d) have been removed!" % (n_deleted))
-			main_nb.set_current_page(self.MAIN_TAB_NOTABLET)
-
-		elif n_deleted > 0 and (n_running > 0 or n_new > 0) and c_page == self.MAIN_TAB_TABLET:
-			self._logger.warning("Some Wacom device has changed!")
-			pass
-
-		elif n_deleted == 0 and n_new > 0 and c_page == self.MAIN_TAB_TABLET:
-			self._logger.warning("Some Wacom device has changed!")
-			pass		
-
+	def get_gtk_builder(self):
+		return self._builder
 
 	# Any device change at the "libwacom" layer must be handled by this function
 	# This will be triggered by the Scanner when it detects changes
 	# These changes can be:
 	# ~ new devices have been added
 	# ~ some device has been removed
-	def on_notify_device_changes(self, running_devices, new_devices, deleted_devices):
-		#TODO: 
-		# Check how we want to notify the user and handle the UI here.
-		# Note that if this is called from the Scanner, then this call will run
-		# in another thread different than Gtk.main 
-		
-		main_nb = self._builder.get_object("main_notebook")
+	#TODO: 
+	# Check how we want to notify the user and handle the UI here.
+	# Note that if this function is called from the Scanner, then this call will run
+	# in another thread different than Gtk.main 
+	def on_device_changes(self, running_devices, new_devices, deleted_devices):
+		#main_nb = self._builder.get_object("main_notebook")
+		#c_page  = main_nb.get_current_page()
+		c_page    = self._w_main.get_current_page()
 		
 		n_running = len(running_devices)
 		n_new     = len(new_devices)
 		n_deleted = len(deleted_devices)
-		c_page    = main_nb.get_current_page()
 
 		if n_deleted == 0 and n_new == 0:
 			self._logger.debug("No changes")
 			
-		elif n_new > 0 and c_page == self.MAIN_TAB_NOTABLET:
-			self._logger.info("Devices detected")
-			main_nb.set_current_page(self.MAIN_TAB_TABLET)
+		elif n_new > 0 and c_page == WMain.MAIN_TAB_NOTABLET:
+			self._logger.info("%d new device(s) detected." % (n_new))
+			self._w_main.show_tablet_page()
 
-		elif n_deleted > 0 and n_running == 0 and n_new == 0 and c_page == self.MAIN_TAB_TABLET:
-			self._logger.info("All devices have been removed!")
-			main_nb.set_current_page(self.MAIN_TAB_NOTABLET)
+		elif n_deleted > 0 and n_running == 0 and n_new == 0 and c_page == WMain.MAIN_TAB_TABLET:
+			self._logger.info("All devices (%d) have been removed!" % (n_deleted))
+			self._w_main.show_no_tablet_page()
 
-		elif n_deleted > 0 and (n_running > 0 or n_new > 0) and c_page == self.MAIN_TAB_TABLET:
+		elif n_deleted > 0 and (n_running > 0 or n_new > 0) and c_page == WMain.MAIN_TAB_TABLET:
 			self._logger.warning("Some Wacom device has changed!")
 			pass
 
-		elif n_deleted == 0 and n_new > 0 and c_page == self.MAIN_TAB_TABLET:
+		elif n_deleted == 0 and n_new > 0 and c_page == WMain.MAIN_TAB_TABLET:
 			self._logger.warning("Some Wacom device has changed!")
-			pass
+			pass		
 
 
 if __name__ == "__main__":

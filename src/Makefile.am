@@ -3,9 +3,10 @@
 
 
 uidir = $(pkgdatadir)/ui
-ui_DATA = gsetwacom.ui \
-	wacom-stylus-page.ui \
-	w_main.ui
+ui_DATA = w_main.ui \
+	w_stylus.ui \
+	w_mapping.ui \
+	w_info.ui
 
 
 ## The main script
@@ -20,12 +21,11 @@ gsetwacom_PYTHON = \
 	w_main.py \
 	scanner.py \
 	registry.py \
-	logger.py \
-	mapper.py \
-	libwacom.py \
 	libwrapper.py \
 	device.py \
-	error.py
+	error.py \
+	logger.py \
+	libwacom.py
 
 
 EXTRA_DIST = $(ui_DATA)
