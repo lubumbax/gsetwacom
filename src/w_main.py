@@ -27,10 +27,16 @@ class WMain():
 	'''
 	The main window (w_main) contains a main_notebook.
 	The main_notebook contains a devices_notebook
+
+	The devices_notebook contains a Mapping and a Information tab.
+	The devices_notebook can get dynamically added:
+	~ Tablet
+	~ Stylus
+	~ Touch
 	'''
 
-	MAIN_TAB_NOTABLET = 0
-	MAIN_TAB_TABLET = 1
+	MAIN_TAB_NODEVICE = 0
+	MAIN_TAB_DEVICE = 1
 
 	#UI_FILE = "/usr/local/share/gsetwacom/ui/w_main.ui"
 	#UI_FILE = "src/w_main.ui"          # TODO: Use GResources
@@ -43,22 +49,18 @@ class WMain():
 		self._main_nb = self._builder.get_object("main_notebook")
 		self._devices_nb = self._builder.get_object("devices_notebook")
 
-		self._notepad_add_page_from_ui_file("w_info.ui", "w_info", "Information")
-		#''' Instantiate the preferences dialog '''
-		#self.d_prefs = preferences.DlgPreferences(self.app)
-		#''' Instantiate the computers factory dialog '''
-		#self.d_factory = factory.DlgFactory(self.app)
-		#''' Instantiate the about dialog '''
-		#self.d_about = self.app.builder.get_object("w_about")
+		#self.add_page_from_ui_file("w_info.ui", "w_info", "Information")
+
+		# TODO: add Mapping and Information tabs
 
 	def show(self):
 		self._window.show_all()
 
-	def show_no_tablet_page(self):
-		self.set_current_page(self.MAIN_TAB_NOTABLET)
+	def show_no_device_page(self):
+		self.set_current_page(self.MAIN_TAB_NODEVICE)
 
-	def show_tablet_page(self):
-		self.set_current_page(self.MAIN_TAB_TABLET)
+	def show_device_page(self):
+		self.set_current_page(self.MAIN_TAB_DEVICE)
 
 	def set_current_page(self, id):
 		#main_nb = self._builder.get_object("main_notebook")
@@ -68,9 +70,18 @@ class WMain():
 		#main_nb = self._builder.get_object("main_notebook")
 		return self._main_nb.get_current_page()
 
-	def _notepad_add_page_from_ui_file(self, file, name, title):
+	# Adds a container panel to the devices notebook
+	def add_page_from_ui_file(self, file, name, title):
 		panel = self._get_window_from_file(file, name, self)
 		self._devices_nb.append_page(panel, Gtk.Label(title))
+		return panel
+
+	# Adds a container panel to the devices notebook at the position indicated
+	# page - a DevicePage object 
+	def add_page(self, page, pos = -1):
+		panel = page.get_panel()
+		title = page.get_title()
+		self._devices_nb.insert_page(panel, Gtk.Label(title), pos)
 		
 	# Retrieves a window from the Gtk builder and connect signals if signals_map is passed
 	# The window can actually be any of the Gtk.Box children.
@@ -88,7 +99,9 @@ class WMain():
 
 		return self._builder.get_object(name)	
 
-
+	def set_device_title(self, title):
+		l_device_title = self._builder.get_object("l_device_title")
+		l_device_title.set_text(title)
 
 	# Callbacks 
 

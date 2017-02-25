@@ -186,58 +186,9 @@ class DeviceScanner():
 
 		self._registry.commit()
 		return True
-		
-		
-		##output = subprocess.check_output(["lsusb"]).splitlines()
-		##output = subprocess.check_output(["xsetwacom", "--list", "devices"]).splitlines()
-		#output = subprocess.check_output(["xsetwacom.sh", "--list", "devices"]).splitlines()
-		#for line in output:
-		#	self._logger.info("> " + line)
-		#
-		## Filter the output of xsetwacom returning an arrary of dictionaries.
-		## Each dictionary corresponds to a device and contains three elements:
-		## "id", "name" and "type".
-		#regex = re.compile("(.*)id:\s*(\d+)\s*type\:\s*(.*)")
-		#devices = [{ 'name': m.group(1).strip(), 
-		#             'id': m.group(2), 
-		#			 'type': m.group(3).strip() } for line in output for m in [regex.search(line)] if m]
-		#
-		#device_names = [dev['name'] for dev in devices if 'name' in dev]
-		#device_set_name = get_device_set_name_from_list(device_names)
-		#self._logger.debug("Device Set Name: " + device_set_name)
-		#
-		#for device in devices:
-		#	self._registry.set_devices_status_checking()              # TODO: rename to start_checking()
-		#	self._registry.register_device(device_set_name, device['id'], device['name'], device['type'])	
-		#
-		## Devices still in STATUS_CHECKING have to be removed (not in the list)
-		#self._registry.remove_devices_on_checking(device_set_name)    # TODO: rename to stop_checking()
-		#
-		## Now we need to notify the app
-		## If devices in STATUS_NEW or STATUS_DELETED we need to notify the UI
-		## If devices in STATUS_NEW
-		#self._app.on_notify_device_changes(self._registry.get_devices_running_from_set(device_set_name),
-		#                                   self._registry.get_devices_new_from_set(device_set_name),
-		#                                   self._registry.get_devices_deleted_from_set(device_set_name))
-
-
-		
 
 
 
 
-
-# Given a list of strings, returns the longest common leading component
-def get_device_set_name_from_list(list):
-	if not list: return ''
-	a, b = min(list), max(list)
-	lo, hi = 0, min(len(a), len(b))
-	while lo < hi:
-		mid = (lo+hi)//2 + 1
-		if a[lo:mid] == b[lo:mid]:
-			lo = mid
-		else:
-			hi = mid - 1
-	return a[:hi]
 
 

@@ -162,8 +162,6 @@ class GSetWacom():
 	# Note that if this function is called from the Scanner, then this call will run
 	# in another thread different than Gtk.main 
 	def on_device_changes(self, running_devices, new_devices, deleted_devices):
-		#main_nb = self._builder.get_object("main_notebook")
-		#c_page  = main_nb.get_current_page()
 		c_page    = self._w_main.get_current_page()
 		
 		n_running = len(running_devices)
@@ -173,22 +171,87 @@ class GSetWacom():
 		if n_deleted == 0 and n_new == 0:
 			self._logger.debug("No changes")
 			
-		elif n_new > 0 and c_page == WMain.MAIN_TAB_NOTABLET:
+		elif n_new > 0 and c_page == WMain.MAIN_TAB_NODEVICE:
 			self._logger.info("%d new device(s) detected." % (n_new))
-			self._w_main.show_tablet_page()
+			self._add_new_devices(new_devices)			
 
-		elif n_deleted > 0 and n_running == 0 and n_new == 0 and c_page == WMain.MAIN_TAB_TABLET:
+		elif n_deleted > 0 and n_running == 0 and n_new == 0 and c_page == WMain.MAIN_TAB_DEVICE:
 			self._logger.info("All devices (%d) have been removed!" % (n_deleted))
-			self._w_main.show_no_tablet_page()
+			self._remove_devices(deleted_devices)
 
-		elif n_deleted > 0 and (n_running > 0 or n_new > 0) and c_page == WMain.MAIN_TAB_TABLET:
+		elif n_deleted > 0 and (n_running > 0 or n_new > 0) and c_page == WMain.MAIN_TAB_DEVICE:
 			self._logger.warning("Some Wacom device has changed!")
 			pass
 
-		elif n_deleted == 0 and n_new > 0 and c_page == WMain.MAIN_TAB_TABLET:
+		elif n_deleted == 0 and n_new > 0 and c_page == WMain.MAIN_TAB_DEVICE:
 			self._logger.warning("Some Wacom device has changed!")
-			pass		
+			pass
 
+	# For now Gsetwacom only handles one device per computer
+	def _add_new_devices(self, devices):
+		for device in devices:
+			self._w_main.set_device_title(device.get_name())
+
+			tablet = PageTablet("tablet:" + device.get_id())  # extends DevicePanel
+			self._w_main.add_page(tablet, 0)
+
+			if (device.has_stylus()):
+				stylus = PageTablet("stylus:" + device.get_id())  # extends DevicePanel
+				self._w_main.add_page(stylus, 1)
+				pass
+
+			if (device.has_touch()):
+				touch = PageTouch("touch:" + device.get_id())  # extends DevicePanel
+				self._w_main.add_page(touch, 2)
+				pass
+
+		self._w_main.show_device_page()
+
+	# For now Gsetwacom only handles one device per computer
+	# so if we call this method it means we are deleting the only running device
+	def _delete_devices(self, devices):
+		self._w_main.set_device_title("")
+		self._w_main.show_no_device_page()
+
+
+class DevicePage(object):
+	def __init__(self, id, title = "Page"):
+		self._id = id
+		self._title = title
+		self._box = Gtk.Box(Gtk.Orientation.VERTICAL, spacing=0)
+
+	def get_panel(self):
+		return self._box
+
+	def get_title(self):
+		return self._title
+
+class PageTablet(DevicePage):
+	def __init__(self, id, title = "Tablet"):
+		super(PageTablet, self).__init__(id, title)
+
+		box = self.get_panel()
+
+		label1 = Gtk.Label("Not implemented")
+		box.pack_start(label1, True, True, 0)
+
+class PageStylus(DevicePage):
+	def __init__(self, id, title = "Stylus"):
+		super(PageStylus, self).__init__(id, title)
+
+		box = self.get_panel()
+
+		label1 = Gtk.Label("Not implemented")
+		box.pack_start(label1, True, True, 0)
+
+class PageTouch(DevicePage):
+	def __init__(self, id, title = "Touch"):
+		super(PageTouch, self).__init__(id, title)
+
+		box = self.get_panel()
+
+		label1 = Gtk.Label("Not implemented")
+		box.pack_start(label1, True, True, 0)
 
 if __name__ == "__main__":
 	sys.exit(main(sys.argv[1:]))
