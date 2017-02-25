@@ -177,19 +177,26 @@ class Device():
 
 		self._name = self.GENERIC_NAME
 
-	# TODO: Return some sort of string that allows us to identify the device 
+	# FIXME: Return some sort of string that allows us to identify the device 
 	# uniquely on the system where it is (or was) running. 
-	# So far we will use "path:vendor:model".
-	# But I am not so sure that it is enough. What happens if we have a
-	# "Wacom Intuos XYZ" detected by "/dev/input/mouse3" and this device uses
-	# more than one path like "mouse4" and "mouse6"? The scanner would discover
-	# one more "Wacom Intuos XYZ" by "/dev/input/mouse4" and "/dev/input/mouse6".
+	# So far we will use "path:vendor:model" but it has to change.
+	# What happens if we have a "Wacom Intuos XYZ" detected by 
+	# "/dev/input/mouse3" and this device uses more than one path like "mouse4"
+	#  and "mouse6"? The scanner would discover one more "Wacom Intuos XYZ" by 
+	# "/dev/input/mouse4" and "/dev/input/mouse6".
+	# Other possibility is that the device is unplugged and then plugged again,
+	# maybe on another port. This has to be still the same device.
+	# On each case, the application might want to keep a registry of what was
+	# present in the system before it was removed. If a device comes back to
+	# life the settings introduced by the user can thus be preserved.
 	# There must be another way to grant unicity, so what we discover by
 	# "/dev/input/mouse3" is exactly the same as what we discover by 
 	# "/dev/input/mouse4". Maybe some sort of internal Id. Whatever it is, that
 	# is what we have to pass to the constructor of Device.
 	def get_id(self):
-		return "%s:%s:%s" % (self._path, self._vendor, self._model)
+		#return "%s:%s:%s" % (self._path, self._vendor, self._model)
+		# Testing with just 'vendor' and 'model'
+		return "%s:%s" % (self._vendor, self._model)
 
 	# Data from LibWacom
 

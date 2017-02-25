@@ -32,6 +32,7 @@ from registry import DeviceRegistry
 from device import DeviceBroker
 from scanner import DeviceScanner
 from w_main import WMain
+from device_pages import PageTablet, PageStylus, PageTouch, PageMapping, PageInformation
 
 
 def main(argv):
@@ -192,18 +193,23 @@ class GSetWacom():
 		for device in devices:
 			self._w_main.set_device_title(device.get_name())
 
-			tablet = PageTablet("tablet:" + device.get_id())  # extends DevicePanel
+			tablet = PageTablet(device.get_id())  # extends DevicePanel
 			self._w_main.add_page(tablet, 0)
 
 			if (device.has_stylus()):
-				stylus = PageTablet("stylus:" + device.get_id())  # extends DevicePanel
+				n = 0
+				stylus = PageStylus(device.get_id(), n)  # extends DevicePanel
 				self._w_main.add_page(stylus, 1)
-				pass
 
 			if (device.has_touch()):
-				touch = PageTouch("touch:" + device.get_id())  # extends DevicePanel
+				touch = PageTouch(device.get_id())  # extends DevicePanel
 				self._w_main.add_page(touch, 2)
-				pass
+
+			mapping = PageMapping(device.get_id())
+			self._w_main.add_page(mapping)
+
+			info = PageInformation(device.get_id())
+			self._w_main.add_page(info)
 
 		self._w_main.show_device_page()
 
@@ -213,45 +219,6 @@ class GSetWacom():
 		self._w_main.set_device_title("")
 		self._w_main.show_no_device_page()
 
-
-class DevicePage(object):
-	def __init__(self, id, title = "Page"):
-		self._id = id
-		self._title = title
-		self._box = Gtk.Box(Gtk.Orientation.VERTICAL, spacing=0)
-
-	def get_panel(self):
-		return self._box
-
-	def get_title(self):
-		return self._title
-
-class PageTablet(DevicePage):
-	def __init__(self, id, title = "Tablet"):
-		super(PageTablet, self).__init__(id, title)
-
-		box = self.get_panel()
-
-		label1 = Gtk.Label("Not implemented")
-		box.pack_start(label1, True, True, 0)
-
-class PageStylus(DevicePage):
-	def __init__(self, id, title = "Stylus"):
-		super(PageStylus, self).__init__(id, title)
-
-		box = self.get_panel()
-
-		label1 = Gtk.Label("Not implemented")
-		box.pack_start(label1, True, True, 0)
-
-class PageTouch(DevicePage):
-	def __init__(self, id, title = "Touch"):
-		super(PageTouch, self).__init__(id, title)
-
-		box = self.get_panel()
-
-		label1 = Gtk.Label("Not implemented")
-		box.pack_start(label1, True, True, 0)
 
 if __name__ == "__main__":
 	sys.exit(main(sys.argv[1:]))

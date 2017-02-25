@@ -19,7 +19,6 @@ import os
 
 import gi
 gi.require_version('Gtk', '3.0')
-
 from gi.repository import Gtk, GdkPixbuf, Gdk
 
 class WMain():
@@ -49,9 +48,10 @@ class WMain():
 		self._main_nb = self._builder.get_object("main_notebook")
 		self._devices_nb = self._builder.get_object("devices_notebook")
 
-		#self.add_page_from_ui_file("w_info.ui", "w_info", "Information")
+		# { <page_id>: DevicePage, ... }
+		self._pages = {}
 
-		# TODO: add Mapping and Information tabs
+		#self.add_page_from_ui_file("w_info.ui", "w_info", "Information")
 
 	def show(self):
 		self._window.show_all()
@@ -71,8 +71,8 @@ class WMain():
 		return self._main_nb.get_current_page()
 
 	# Adds a container panel to the devices notebook
-	def add_page_from_ui_file(self, file, name, title):
-		panel = self._get_window_from_file(file, name, self)
+	def add_page_from_ui_file(self, file, id, title):
+		panel = self._get_window_from_file(file, id, self)
 		self._devices_nb.append_page(panel, Gtk.Label(title))
 		return panel
 
@@ -82,6 +82,7 @@ class WMain():
 		panel = page.get_panel()
 		title = page.get_title()
 		self._devices_nb.insert_page(panel, Gtk.Label(title), pos)
+		self._pages[page.get_id()] = page
 		
 	# Retrieves a window from the Gtk builder and connect signals if signals_map is passed
 	# The window can actually be any of the Gtk.Box children.
