@@ -16,9 +16,9 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import subprocess
-import re
-import glob
+#import subprocess
+#import re
+#import glob
 
 from threading import Thread
 from time      import sleep
@@ -171,6 +171,7 @@ class DeviceScanner():
 				self._logger.info("Discovering connected devices")
 				devices = self._broker.find_all()                                                        # TODO: free internal LibWacom devices later
 				for device in devices:
+					self._logger.debug("Registering discovered device: " + device.get_name())
 					self._registry.register(device)
 
 			self._registry.end_checking()

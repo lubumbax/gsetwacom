@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from error import GsException, GsError
+import glob
 
+from error import GsException, GsError
 from libwacom import LibWacom, LibWrapperException, WacomFallbackFlags, WacomDevice
 from ctypes import byref
 
@@ -98,10 +99,20 @@ class DeviceBroker():
 			                                               path, 
 			                                               WacomFallbackFlags.WFALLBACK_NONE, 
 			                                               self._error)
-				if bool(device_p):
+				if not device_p:
+					#print "Scanning port " + path + ", nothing found"
+					pass
+				else:
+					#print "Scanning port " + path + ", found: " + self._lw.libwacom_get_name(device_p)
 					devices.append(self._create_device(device_p, path))
+					#TODO: for now we only discover one device.
+					# We have to study whether we want to handle more than 
+					# one Wacom device in one system.
+					break
 		except LibWrapperException as lwe:
 			raise GsError("Error while trying to find a device at %s" % (path), str(lwe))
+
+		return devices
 
 	def _create_device(self, device_p, path):
 		# Minimum data that uniquely identifies a Device in the system.

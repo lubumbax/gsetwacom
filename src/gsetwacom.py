@@ -211,6 +211,7 @@ class GSetWacom():
 			info = PageInformation(device.get_id())
 			self._w_main.add_page(info)
 
+		self._w_main.show()
 		self._w_main.show_device_page()
 
 	# For now Gsetwacom only handles one device per computer
