@@ -130,12 +130,6 @@ class DeviceRegistry():
 	I would say that synchronization has to happen in DeviceBroker.
 	'''
 
-	# REMOVE THESE 
-	#self.STATUS_NEW       = 'N'    # A device is new in the registry, and is not commited yet.
-	#self.STATUS_RUNNING   = 'R'    # A device is registerted and commited. 
-	#self.STATUS_DELETED   = 'D'    # A device that doesn't belong to the registry any more, and has to be removed on commit. 
-	#self.STATUS_CHECKING  = 'C'    # A device that is not available, but not deleted yet. It still has a chance to be returned to running. 
-
 	#STATUS_DELETED   = 1 << 0                   # checked, not found, not commited yet (to be removed if 'sticky = False')
 	#STATUS_NEW       = 1 << 1                   # just registered, not commited.
 	#STATUS_RUNNING   = 1 << 2                   # registered and commited. 
@@ -152,8 +146,7 @@ class DeviceRegistry():
 	STATUS_DIRTY       = 1 << 5  # set by the app as changed properties
 	STATUS_DELETED     = 1 << 6  # checked, not found, not commited yet (to be removed if 'sticky = False')
 	STATUS_ZOOMBIE     = 1 << 7  # checked, not found, not commited yet (to be removed if 'sticky = False')
-	STATUS_STICKY      = 1 << 8  # checked, not found, commited (persisted if 'sticky = True')
-	STATUS_RESURRECTED = 1 << 9  # checked, not found, commited (persisted if 'sticky = True')
+	STATUS_RESURRECTED = 1 << 8  # checked, not found, commited (persisted if 'sticky = True')
 
 	# Transaction status
 	TRANSACTION_STATUS_NONE     = 1 << 0	# set by commit(), and initial
@@ -175,7 +168,7 @@ class DeviceRegistry():
 		self._reg_lock = RLock()
 
 		self._tx_lock = Lock()
-		self._transaction_status = TRANSACTION_STATUS_NONE
+		self._transaction_status = self.TRANSACTION_STATUS_NONE
 
 		# Initially, _registry_backup will be a copy of _registry at the time a
 		# transaction started. Eventually, if we ever support multi-transaction
@@ -210,11 +203,11 @@ class DeviceRegistry():
 		# transaction, should rollback() and then begin() a new transaction?
 		# For now we just return doing nothing in case we already were in a 
 		# transaction.
-		if not self._transaction_status == TRANSACTION_STATUS_NONE:
+		if not self._transaction_status == self.TRANSACTION_STATUS_NONE:
 			return
 
 		self._tx_lock.acquire()
-		self._transaction_status = TRANSACTION_STATUS_BEGIN
+		self._transaction_status = self.TRANSACTION_STATUS_BEGIN
 		self._backup()
 
 		if checking_implicit is True:
@@ -230,11 +223,11 @@ class DeviceRegistry():
 	# All existing devices are enabled the CHECKING status here.
 	# Raises GsNoTransaction if begin() has not been called previously.
 	def start_checking(self):
-		if self._transaction_status < TRANSACTION_STATUS_BEGIN:
+		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't start checking if not in a transaction")
 		#self._set_devices_status(self.STATUS_CHECKING)
 		self._add_devices_status(self.STATUS_CHECKING)
-		self._transaction_status = TRANSACTION_STATUS_CHECKING
+		self._transaction_status = self.TRANSACTION_STATUS_CHECKING
 
 	# Handles registration of an incoming device, as it is discovered by the
 	# application.
@@ -301,13 +294,13 @@ class DeviceRegistry():
 	# In the end we will have some devices in NEW, RUNNING, DELETED or ZOOMBIE.
 	# Raises GsNoTransaction if begin() has not been called previously.
 	def end_checking(self):
-		if self._transaction_status < TRANSACTION_STATUS_BEGIN:
+		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't end checking if not in a transaction")
 
 		self._notify()		
 		self._checking_to_deleted()
 
-		self._transaction_status = TRANSACTION_STATUS_CKECKED
+		self._transaction_status = self.TRANSACTION_STATUS_CKECKED
 
 	# Persists changes to the registry and notifies observers of changes.
 	# 
@@ -322,28 +315,28 @@ class DeviceRegistry():
 	#
 	# Raises GsNoTransaction if begin() has not been called previously.
 	def commit(self):
-		if self._transaction_status < TRANSACTION_STATUS_BEGIN:
+		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't commit if not in a transaction")
 
-		if self._transaction_status < TRANSACTION_STATUS_CKECKED:
+		if self._transaction_status < self.TRANSACTION_STATUS_CKECKED:
 			#self._remove_devices_checking()
 			self._checking_to_deleted()
-			self._transaction_status = TRANSACTION_STATUS_CKECKED
+			self._transaction_status = self.TRANSACTION_STATUS_CKECKED
 
 		self._internal_commit()
 
 		self._registry_backup = {}
 		self._tx_lock.release()
-		self._transaction_status = TRANSACTION_STATUS_NONE
+		self._transaction_status = self.TRANSACTION_STATUS_NONE
 
 	def rollback(self):
-		if self._transaction_status < TRANSACTION_STATUS_BEGIN:
+		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't rollback if not in a transaction")
 		else:
 			self._restore()
 			self._registry_backup = {}
 			self._tx_lock.release()
-			self._transaction_status = TRANSACTION_STATUS_NONE
+			self._transaction_status = self.TRANSACTION_STATUS_NONE
 
 	# Makes a "half-deep" copy of the registry (does not create copies of 
 	# the Device objects).
@@ -496,11 +489,11 @@ class DeviceRegistry():
 			self._registry[id]['status'] = self._registry[id]['status'] | status
 		self._reg_lock.release()
 
-	def _del_devices_status(self, status):
-		self._reg_lock.acquire()
-		for id in self._registry:
-			self._registry[id]['status'] = self._registry[id]['status'] & !status
-		self._reg_lock.release()
+	#def _del_devices_status(self, status):
+	#	self._reg_lock.acquire()
+	#	for id in self._registry:
+	#		self._registry[id]['status'] = self._registry[id]['status'] & !status
+	#	self._reg_lock.release()
 
 	# Sets devices that are still in CHECKING status to DELETED.
 	# If the registry is 'sticky' set devices to ZOOMBIE.

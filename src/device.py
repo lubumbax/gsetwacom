@@ -327,8 +327,8 @@ class Device():
 		#if self.get_width() != target_device.get_width():
 		#	return False
 
-		if self.get_name() != target_device.get_name()      \
-		   self.get_height() != target_device.get_height()  \
+		if self.get_name() != target_device.get_name()      and \
+		   self.get_height() != target_device.get_height()  and \
 		   self.get_width() != target_device.get_width():
 			return False
 
