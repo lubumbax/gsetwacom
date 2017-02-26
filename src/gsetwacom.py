@@ -110,6 +110,7 @@ class GSetWacom():
 
 		self._logger.debug("Creating DeviceRegisty")
 		self._registry = DeviceRegistry()
+		self._registry.add_observer(self)
 
 		self._logger.debug("Creating DeviceBroker")
 		if args and args.device_database:
@@ -162,6 +163,10 @@ class GSetWacom():
 	# Check how we want to notify the user and handle the UI here.
 	# Note that if this function is called from the Scanner, then this call will run
 	# in another thread different than Gtk.main 
+	# 
+	# NEW NOTE / TODO:
+	# We don't need to know of currently running_devices, unless they have 
+	# hardware or config changes in which case the user will be informed.
 	def on_device_changes(self, running_devices, new_devices, deleted_devices):
 		c_page    = self._w_main.get_current_page()
 		
@@ -218,7 +223,11 @@ class GSetWacom():
 	# so if we call this method it means we are deleting the only running device
 	def _delete_devices(self, devices):
 		self._w_main.set_device_title("")
-		self._w_main.show_no_device_page()
+		#TODO: if we have removed a device we don't need to remove it from the 
+		# UI. We will rather keep it as we may plug it back again so we will 
+		# want to apply the settings from the UI (user asked if pushing config
+		# down or reset the UI with discovered device's values)
+		#self._w_main.show_no_device_page()
 
 
 if __name__ == "__main__":

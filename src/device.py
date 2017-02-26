@@ -309,22 +309,46 @@ class Device():
 		return self._strips_num_modes
 
 
-	# Checks if "device" is exactly the same as the current one. 
+	# Checks if "target_device" is exactly the same as the current one. 
 	# For that, not only the id but also other characteristics are checked
-	# like, for example the device has now one more pen, or an airbrush is gone
-	# Returns True if they exactly the same
-	def is_full_match(self, device):
+	# like, for example the target_device has now one more pen, or an airbrush is gone
+	# Returns True if they are exactly the same
+	def matches_full_hardware(self, target_device):
 		# For now we assume that they are exactly the same if they just match 
 		# 'id' and a few other properties.
-		if self.get_id() != device.get_id():
-			return False
-		if self.get_name() != device.get_name():
-			return False
-		if self.get_height() != device.get_height():
-			return False
-		if self.get_width() != device.get_width():
+		# if get_id() != target_device.get_id():
+		if not self.matches_id(target_device): 
 			return False
 
+		#if self.get_name() != target_device.get_name():
+		#	return False
+		#if self.get_height() != target_device.get_height():
+		#	return False
+		#if self.get_width() != target_device.get_width():
+		#	return False
+
+		if self.get_name() != target_device.get_name()      \
+		   self.get_height() != target_device.get_height()  \
+		   self.get_width() != target_device.get_width():
+			return False
+
+		return True
+
+	# Returns True if our device matches the target_device at least by id.
+	def matches_id(self, target_device):
+		# For now we assume that they are exactly the same if they just match 
+		# 'id' and a few other properties.
+		if self.get_id() == target_device.get_id():
+			return True
+		else:
+			return False
+
+	# Checks if the configurable characteristics of both devices are the same.
+	# It will return False if the user has changed configuration of the 
+	# "target_device".
+	# [FIXME]: we will return True until we start implementing user changes 
+	# upon actions on the UI.
+	def matches_configuration(self, target_device):
 		return True
 
 	'''

@@ -132,6 +132,8 @@ class DeviceScanner():
 
 	# Checks available devices from the OS and updates the registry.
 	# Then it notifies the application with changes.
+	# TODO: free internal LibWacom devices created here when they are not 
+	# needed anymore
 	def scan(self):
 		#if self._iterations < 3:
 		#	self._iterations = self._iterations + 1
@@ -151,7 +153,7 @@ class DeviceScanner():
 			# find by path
 			if self._device_path:
 				self._logger.info("Finding device at " + self._device_path)
-				device = self._broker.find_by_path(self._device_path)                        # TODO: free internal LibWacom devices later, somehow
+				device = self._broker.find_by_path(self._device_path)
 				if device is None:
 					self._logger.info("Device not found at" + self._device_path)
 					return False
@@ -160,16 +162,17 @@ class DeviceScanner():
 			# simulate vendor:model
 			elif self._device_model:
 				self._logger.info("Simulating " + hex(self._device_vendor) + ":" + hex(self._device_model))
-				device = self._broker.find_by_usbid(self._device_vendor, self._device_model)            # TODO: free internal LibWacom devices later
+				device = self._broker.find_by_usbid(self._device_vendor, self._device_model)
 				if device is None:
-					self._logger.warning("Can't simulate a device by vendor " + hex(self._device_vendor) + " and model " + hex(self._device_model))
+					self._logger.warning("Can't simulate a device by vendor " + hex(self._device_vendor) + 
+					                     " and model " + hex(self._device_model))
 					return False
 				self._registry.register(device)
 
 			# discover
 			else:
 				self._logger.info("Discovering connected devices")
-				devices = self._broker.find_all()                                                        # TODO: free internal LibWacom devices later
+				devices = self._broker.find_all() 
 				for device in devices:
 					self._logger.debug("Registering discovered device: " + device.get_name())
 					self._registry.register(device)
