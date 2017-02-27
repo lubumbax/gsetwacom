@@ -183,10 +183,10 @@ class DeviceScanner():
 			self._logger.error(str(lwe))
 			return False
 		
-		devices_running = self._registry.get_devices_running()
-		devices_new = self._registry.get_devices_new()
-		devices_deleted = self._registry.get_devices_deleted()
-		self._app.on_device_changes(devices_running, devices_new, devices_deleted)
+		#devices_running = self._registry.get_devices_running()
+		#devices_new = self._registry.get_devices_new()
+		#devices_deleted = self._registry.get_devices_deleted()
+		#self._app.on_device_changes(devices_running, devices_new, devices_deleted)
 
 		self._registry.commit()
 		return True

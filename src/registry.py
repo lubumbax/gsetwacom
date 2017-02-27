@@ -130,13 +130,6 @@ class DeviceRegistry():
 	I would say that synchronization has to happen in DeviceBroker.
 	'''
 
-	#STATUS_DELETED   = 1 << 0                   # checked, not found, not commited yet (to be removed if 'sticky = False')
-	#STATUS_NEW       = 1 << 1                   # just registered, not commited.
-	#STATUS_RUNNING   = 1 << 2                   # registered and commited. 
-	#STATUS_CHANGED   = 1 << 3 | STATUS_RUNNING  # found in the system with changes
-	#STATUS_DIRTY     = 1 << 4 | STATUS_RUNNING  # set by the app as changed properties
-	#STATUS_CHECKING  = 1 << 8 | STATUS_RUNNING  # was running, set to be checked (may or may not be found)
-
 	# Status of Devices in the registry
 	STATUS_NONE        = 0       # No status. Ignore this device.
 	STATUS_NEW         = 1 << 1  # just registered, not commited.
@@ -145,8 +138,9 @@ class DeviceRegistry():
 	STATUS_CHANGED     = 1 << 4  # found in the system with hardware changes
 	STATUS_DIRTY       = 1 << 5  # set by the app as changed properties
 	STATUS_DELETED     = 1 << 6  # checked, not found, not commited yet (to be removed if 'sticky = False')
-	STATUS_ZOOMBIE     = 1 << 7  # checked, not found, not commited yet (to be removed if 'sticky = False')
-	STATUS_RESURRECTED = 1 << 8  # checked, not found, commited (persisted if 'sticky = True')
+	STATUS_TURNING     = 1 << 7  # turning into zoombie
+	STATUS_ZOOMBIE     = 1 << 8  # checked, not found, not commited yet (to be removed if 'sticky = False')
+	STATUS_RESURRECTED = 1 << 9  # checked, not found, commited (persisted if 'sticky = True')
 
 	# Transaction status
 	TRANSACTION_STATUS_NONE     = 1 << 0	# set by commit(), and initial
@@ -182,9 +176,6 @@ class DeviceRegistry():
 	def __del__(self):
 		#self._lw.libwacom_database_destroy(self._db)
 		pass
-
-	def add_observer(self, observer):
-		self._observers.append(observer)
 
 	# Begins a devices register transaction in the registry. 
 	# 
@@ -225,7 +216,6 @@ class DeviceRegistry():
 	def start_checking(self):
 		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't start checking if not in a transaction")
-		#self._set_devices_status(self.STATUS_CHECKING)
 		self._add_devices_status(self.STATUS_CHECKING)
 		self._transaction_status = self.TRANSACTION_STATUS_CHECKING
 
@@ -276,12 +266,12 @@ class DeviceRegistry():
 	# conveniently.
 	#
 	# Here is how the observers (application) are notified:
-	# ~ NEW devices:                  notify_new
-	# - RESURRECTED devices:          notify_resurrected
-	# ~ RUNNING and CHANGED:          notify_changed
-	# ~ RUNNING and DIRTY:            notify_dirty
-	# ~ ZOOMBIE:                      notify_zoombie
-	# ~ DELETED:                      notify_remove
+	# ~ NEW devices:           notify_new
+	# - RESURRECTED devices:   notify_resurrected
+	# ~ RUNNING and CHANGED:   notify_changed
+	# ~ RUNNING and DIRTY:     notify_dirty
+	# ~ RUNNING and ZOOMBIE:   notify_zoombie
+	# ~ DELETED:               notify_remove
 	#
 	# Devices still in CHECKING means haven't been registered so most likely
 	# they are not present in the system, thus they are set to DELETED so that
@@ -297,8 +287,8 @@ class DeviceRegistry():
 		if self._transaction_status < self.TRANSACTION_STATUS_BEGIN:
 			raise GsNoTransaction("can't end checking if not in a transaction")
 
-		self._notify()		
 		self._checking_to_deleted()
+		self._notify()
 
 		self._transaction_status = self.TRANSACTION_STATUS_CKECKED
 
@@ -319,7 +309,6 @@ class DeviceRegistry():
 			raise GsNoTransaction("can't commit if not in a transaction")
 
 		if self._transaction_status < self.TRANSACTION_STATUS_CKECKED:
-			#self._remove_devices_checking()
 			self._checking_to_deleted()
 			self._transaction_status = self.TRANSACTION_STATUS_CKECKED
 
@@ -396,7 +385,7 @@ class DeviceRegistry():
 			# Override any other possible status flag with RUNNING
 			#if self._device_is_zoombie(id):
 			if self._device_is_zoombie(id):
-				self._set_device_status(id, self.STATUS_RUNNING | self.STATUS_RESURRECTED)
+				self._set_device_status(id, self.STATUS_RESURRECTED)
 			else:
 				self._set_device_status(id, self.STATUS_RUNNING)
 
@@ -412,44 +401,21 @@ class DeviceRegistry():
 
 		self._reg_lock.release()
 
-	# Notifies observers of changes in the registry
-	# ~ NEW devices:          notify_new
-	# - RESURRECTED devices:  notify_resurrected
-	# ~ RUNNING and CHANGED:  notify_changed
-	# ~ RUNNING and DIRTY:    notify_dirty
-	# ~ ZOOMBIE:              notify_zoombies
-	# ~ DELETED (removed):    notify_removed
-	def _notify(self):
-		for id in self._registry:
-			for observer in self._observers:
-				if self._registry[id]['status']   == self.STATUS_NEW:
-					if self._observer_has_function(observer, 'notify_devices_new'):
-						observer.notify_devices_new()
-				elif self._registry[id]['status'] == self.STATUS_RESURRECTED:
-					if self._observer_has_function(observer, 'notify_devices_resurrected'):
-						observer.notify_devices_resurrected()
-				elif self._registry[id]['status'] & (self.STATUS_RUNNING | self.STATUS_CHANGED):
-					if self._observer_has_function(observer, 'notify_devices_changed'):
-						observer.notify_devices_changed()
-				elif self._registry[id]['status'] & (self.STATUS_RUNNING | self.STATUS_DIRTY):
-					if self._observer_has_function(observer, 'notify_devices_dirty'):
-						observer.notify_devices_dirty()
-				elif self._registry[id]['status'] == self.STATUS_ZOOMBIE:
-					if self._observer_has_function(observer, 'notify_devices_zoombie'):
-						observer.notify_devices_zoombie()
-				elif self._registry[id]['status'] == self.STATUS_DELETED:
-					if self._observer_has_function(observer, 'notify_devices_deleted'):
-						observer.notify_devices_deleted()
-
 	# Sets devices on NEW to RUNNING and removes those on DELETED.
 	# It also removes extra flags 
 	def _internal_commit(self):
 		self._reg_lock.acquire()
 
 		for id in self._registry.keys():
+			# Set devices on ZOOMBIE and RUNNING to only ZOOMBIE here so that
+			# they don't trigger _notify() on a next check cycle (unless they 
+			# have been resurrected)
+			if self._registry[id]['status'] == self.STATUS_TURNING:
+				self._registry[id]['status'] = self.STATUS_ZOOMBIE
+
 			# Set ZOOMBIE, CHANGED and DIRTY devices to RUNNING here so that
 			# they don't trigger _notify() on a next check cycle
-			if self._registry[id]['status'] & (self.STATUS_ZOOMBIE | self.STATUS_CHANGED | self.STATUS_DIRTY):
+			if self._registry[id]['status'] & (self.STATUS_CHANGED | self.STATUS_DIRTY):
 				self._registry[id]['status'] = self.STATUS_RUNNING
 
 			# NEWly discovered devices have been notified so they are now
@@ -500,27 +466,17 @@ class DeviceRegistry():
 	def _checking_to_deleted(self):
 		self._reg_lock.acquire()
 		for id in self._registry:
-			if self._registry[id]['status'] & self.STATUS_CHECKING:
+			if self._registry[id]['status'] & self.STATUS_CHECKING and not \
+			   self._registry[id]['status'] & self.STATUS_ZOOMBIE:
 				if self._sticky:
-					#self._registry[id]['status'] = self.STATUS_DELETED | self.STATUS_STICKY
-					self._registry[id]['status'] = self.STATUS_ZOOMBIE
+					self._registry[id]['status'] = self.STATUS_TURNING
 				else:
 					self._registry[id]['status'] = self.STATUS_DELETED
 		self._reg_lock.release()
 
-	## Gets rid of extra status flags for RUNNING devices (eg RESURRECTED, 
-	## DIRTY, CHANGED) and leaves only RUNNING.
-	#def _running_to_just_running(self):
-	#	self._reg_lock.acquire()
-	#	for id in self._registry:
-	#		if self._registry[id]['status'] & self.STATUS_RUNNING:
-	#			self._registry[id]['status'] = self.STATUS_RUNNING
-	#	self._reg_lock.release()
-
 	def _device_is_zoombie(self, id):
 		record = self._registry.get(id)
 		if not record is None:
-			#return record['status'] & (self.STATUS_DELETED | self.STATUS_STICKY)
 			return record['status'] & self.STATUS_ZOOMBIE
 		else:
 			return False
@@ -552,6 +508,45 @@ class DeviceRegistry():
 		self._reg_lock.release()
 		return devices
 
-	def _observer_has_function(self, observer, function_name):
-		func = getattr(observer, function_name, None)
-		return callable(func)
+	def add_observer(self, observer):
+		self._observers.append(observer)
+
+	# Notifies observers of changes in the registry
+	# ~ NEW devices:          notify_new
+	# - RESURRECTED devices:  notify_resurrected
+	# ~ RUNNING and CHANGED:  notify_changed
+	# ~ RUNNING and DIRTY:    notify_dirty
+	# ~ RUNNING and ZOOMBIE:  notify_zoombie
+	# ~ DELETED (removed):    notify_removed
+	def _notify(self):
+		for id in self._registry:
+			for observer in self._observers:
+				if self._registry[id]['status']   == self.STATUS_NEW:
+					self._notify_observer(observer, 
+					                      'notify_device_new', 
+					                      self._registry[id]['device'])
+				elif self._registry[id]['status'] == self.STATUS_RESURRECTED:
+					self._notify_observer(observer, 
+					                      'notify_device_resurrected', 
+					                      self._registry[id]['device'])
+				elif self._registry[id]['status'] & (self.STATUS_RUNNING | self.STATUS_CHANGED):
+					self._notify_observer(observer, 
+					                      'notify_device_changed', 
+					                      self._registry[id]['device'])
+				elif self._registry[id]['status'] & (self.STATUS_RUNNING | self.STATUS_DIRTY):
+					self._notify_observer(observer, 
+					                      'notify_device_dirty', 
+					                      self._registry[id]['device'])
+				elif self._registry[id]['status'] == self.STATUS_TURNING:
+					self._notify_observer(observer, 
+					                      'notify_device_zoombie', 
+					                      self._registry[id]['device'])
+				elif self._registry[id]['status'] == self.STATUS_DELETED:
+					self._notify_observer(observer, 
+					                      'notify_device_deleted', 
+					                      self._registry[id]['device'])
+
+	def _notify_observer(self, observer, event_name, device):
+		observer_callback = getattr(observer, "on_" + event_name, None)
+		if callable(observer_callback):
+			result = observer_callback(device)

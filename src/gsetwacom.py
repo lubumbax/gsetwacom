@@ -154,6 +154,64 @@ class GSetWacom():
 	def get_gtk_builder(self):
 		return self._builder
 
+	# Callbacks for the DeviceScanner
+
+	def on_notify_device_new(self, device):
+		self._logger.info("New device detected: " + device.get_name())
+		self._add_new_device(device)
+		self._w_main.show()
+		self._w_main.show_device_page()
+
+	def on_notify_device_deleted(self, device):
+		self._logger.info("A device has been removed: " + device.get_name())
+
+	def on_notify_device_zoombie(self, device):
+		self._logger.info("A device has been unplugged: " + device.get_name())
+
+	def on_notify_device_resurrected(self, device):
+		self._logger.info("A device has come back to life: " + device.get_name())
+
+	# For now Gsetwacom only handles one device per computer
+	def _add_new_device(self, device):
+		self._w_main.set_device_title(device.get_name())
+
+		tablet = PageTablet(device.get_id())
+		self._w_main.add_page(tablet, 0)
+
+		if (device.has_stylus()):
+			n = 0
+			stylus = PageStylus(device.get_id(), n)
+			self._w_main.add_page(stylus, 1)
+
+		if (device.has_touch()):
+			touch = PageTouch(device.get_id())
+			self._w_main.add_page(touch, 2)
+
+		mapping = PageMapping(device.get_id())
+		self._w_main.add_page(mapping)
+
+		info = PageInformation(device.get_id())
+		self._w_main.add_page(info)
+
+	# For now Gsetwacom only handles one device per computer
+	def _add_new_devices(self, devices):
+		for device in devices:
+			self._add_new_device(device)
+
+		self._w_main.show()
+		self._w_main.show_device_page()
+
+	# For now Gsetwacom only handles one device per computer
+	# so if we call this method it means we are deleting the only running device
+	# @obsolete
+	def _delete_devices(self, devices):
+		self._w_main.set_device_title("")
+		#TODO: if we have removed a device we don't need to remove it from the 
+		# UI. We will rather keep it as we may plug it back again so we will 
+		# want to apply the settings from the UI (user asked if pushing config
+		# down or reset the UI with discovered device's values)
+		#self._w_main.show_no_device_page()
+
 	# Any device change at the "libwacom" layer must be handled by this function
 	# This will be triggered by the Scanner when it detects changes
 	# These changes can be:
@@ -167,7 +225,9 @@ class GSetWacom():
 	# NEW NOTE / TODO:
 	# We don't need to know of currently running_devices, unless they have 
 	# hardware or config changes in which case the user will be informed.
+	# @obsolete
 	def on_device_changes(self, running_devices, new_devices, deleted_devices):
+		return
 		c_page    = self._w_main.get_current_page()
 		
 		n_running = len(running_devices)
@@ -192,42 +252,6 @@ class GSetWacom():
 		elif n_deleted == 0 and n_new > 0 and c_page == WMain.MAIN_TAB_DEVICE:
 			self._logger.warning("Some Wacom device has changed!")
 			pass
-
-	# For now Gsetwacom only handles one device per computer
-	def _add_new_devices(self, devices):
-		for device in devices:
-			self._w_main.set_device_title(device.get_name())
-
-			tablet = PageTablet(device.get_id())  # extends DevicePanel
-			self._w_main.add_page(tablet, 0)
-
-			if (device.has_stylus()):
-				n = 0
-				stylus = PageStylus(device.get_id(), n)  # extends DevicePanel
-				self._w_main.add_page(stylus, 1)
-
-			if (device.has_touch()):
-				touch = PageTouch(device.get_id())  # extends DevicePanel
-				self._w_main.add_page(touch, 2)
-
-			mapping = PageMapping(device.get_id())
-			self._w_main.add_page(mapping)
-
-			info = PageInformation(device.get_id())
-			self._w_main.add_page(info)
-
-		self._w_main.show()
-		self._w_main.show_device_page()
-
-	# For now Gsetwacom only handles one device per computer
-	# so if we call this method it means we are deleting the only running device
-	def _delete_devices(self, devices):
-		self._w_main.set_device_title("")
-		#TODO: if we have removed a device we don't need to remove it from the 
-		# UI. We will rather keep it as we may plug it back again so we will 
-		# want to apply the settings from the UI (user asked if pushing config
-		# down or reset the UI with discovered device's values)
-		#self._w_main.show_no_device_page()
 
 
 if __name__ == "__main__":
