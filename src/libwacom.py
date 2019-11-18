@@ -78,7 +78,7 @@ class WacomIntegrationFlags:     # Tablet integration.
 		WACOM_DEVICE_INTEGRATED_SYSTEM  = (1 << 1)
 	} WacomIntegrationFlags;
 	'''
-	WACOM_DEVICE_INTEGRATED_NONE    = 0,
+	WACOM_DEVICE_INTEGRATED_NONE    = 0
 	WACOM_DEVICE_INTEGRATED_DISPLAY = 1 << 0
 	WACOM_DEVICE_INTEGRATED_SYSTEM  = 1 << 1
 
@@ -156,7 +156,7 @@ class WacomButtonFlags:         # Capabilities of the various tablet buttons
 		WACOM_BUTTON_TOUCHSTRIPS_MODESWITCH = (WACOM_BUTTON_TOUCHSTRIP_MODESWITCH | WACOM_BUTTON_TOUCHSTRIP2_MODESWITCH),
 	} WacomButtonFlags;
 	'''
-	WACOM_BUTTON_NONE                   = 0,
+	WACOM_BUTTON_NONE                   = 0
 	WACOM_BUTTON_POSITION_LEFT          = 1 << 1
 	WACOM_BUTTON_POSITION_RIGHT         = 1 << 2
 	WACOM_BUTTON_POSITION_TOP           = 1 << 3
@@ -187,7 +187,7 @@ class WacomAxisTypeFlags:  # Axis type for a stylus. Note that x/y is implied.
 		WACOM_AXIS_TYPE_SLIDER              = (1 << 5),
 	} WacomAxisTypeFlags;
 	'''
-	WACOM_AXIS_TYPE_NONE       = 0,
+	WACOM_AXIS_TYPE_NONE       = 0
 	WACOM_AXIS_TYPE_TILT       = 1 << 1    # Tilt in x and y direction
 	WACOM_AXIS_TYPE_ROTATION_Z = 1 << 2    # Rotation in the z-axis
 	WACOM_AXIS_TYPE_DISTANCE   = 1 << 3    # Distance to surface
